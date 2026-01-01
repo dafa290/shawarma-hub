@@ -1,8 +1,12 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingCart, Menu, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import CartSidebar from './CartSidebar';
+import UserMenu from './UserMenu';
+import { Button } from './ui/button';
 
 interface NavbarProps {
   onSearchOpen: () => void;
@@ -12,6 +16,7 @@ const Navbar = ({ onSearchOpen }: NavbarProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const { totalItems } = useCart();
+  const { user, loading } = useAuth();
 
   const navLinks = [
     { href: '#home', label: 'Home' },
@@ -26,10 +31,10 @@ const Navbar = ({ onSearchOpen }: NavbarProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
             {/* Logo */}
-            <a href="#" className="flex items-center gap-1 text-xl md:text-2xl font-display font-bold italic">
+            <Link to="/" className="flex items-center gap-1 text-xl md:text-2xl font-display font-bold italic">
               <span className="text-foreground">SHAWARMA</span>
               <span className="text-primary">BAR</span>
-            </a>
+            </Link>
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
@@ -44,7 +49,7 @@ const Navbar = ({ onSearchOpen }: NavbarProps) => {
               ))}
             </div>
 
-            {/* Icons */}
+            {/* Icons & Auth */}
             <div className="flex items-center gap-3">
               <button
                 onClick={onSearchOpen}
@@ -68,6 +73,21 @@ const Navbar = ({ onSearchOpen }: NavbarProps) => {
                   </motion.span>
                 )}
               </button>
+
+              {/* Auth */}
+              {!loading && (
+                <div className="hidden sm:block">
+                  {user ? (
+                    <UserMenu />
+                  ) : (
+                    <Link to="/auth">
+                      <Button variant="default" size="sm">
+                        Masuk
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              )}
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -99,6 +119,25 @@ const Navbar = ({ onSearchOpen }: NavbarProps) => {
                     {link.label}
                   </a>
                 ))}
+                
+                {/* Mobile Auth */}
+                {!loading && !user && (
+                  <Link
+                    to="/auth"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block"
+                  >
+                    <Button variant="default" className="w-full mt-2">
+                      Masuk / Daftar
+                    </Button>
+                  </Link>
+                )}
+                
+                {!loading && user && (
+                  <div className="pt-2 border-t border-border">
+                    <UserMenu />
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
