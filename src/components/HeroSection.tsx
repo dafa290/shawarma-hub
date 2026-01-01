@@ -1,7 +1,11 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HeroSection = () => {
+  const { user } = useAuth();
+
   return (
     <section id="home" className="min-h-screen flex items-center pt-20 relative overflow-hidden">
       {/* Background decoration */}
@@ -62,12 +66,31 @@ const HeroSection = () => {
               transition={{ delay: 0.6 }}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
-              <Button variant="hero" size="xl">
-                Sign In / Sign Up
-              </Button>
-              <Button variant="heroOutline" size="xl">
-                As Guest
-              </Button>
+              {user ? (
+                <>
+                  <a href="#menu">
+                    <Button variant="hero" size="xl">
+                      Lihat Menu
+                    </Button>
+                  </a>
+                  <Button variant="heroOutline" size="xl">
+                    Hai, {user.user_metadata?.full_name?.split(' ')[0] || 'User'}! 👋
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth">
+                    <Button variant="hero" size="xl">
+                      Sign In / Sign Up
+                    </Button>
+                  </Link>
+                  <a href="#menu">
+                    <Button variant="heroOutline" size="xl">
+                      Lihat Menu
+                    </Button>
+                  </a>
+                </>
+              )}
             </motion.div>
           </motion.div>
 

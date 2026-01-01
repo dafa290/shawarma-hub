@@ -1,7 +1,10 @@
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from './ui/button';
+import { toast } from 'sonner';
 
 interface CartSidebarProps {
   open: boolean;
@@ -10,6 +13,7 @@ interface CartSidebarProps {
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { cart, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart();
+  const { user } = useAuth();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -17,6 +21,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(price);
+  };
+
+  const handleCheckout = () => {
+    if (!user) {
+      toast.info('Silakan login terlebih dahulu untuk checkout');
+      onClose();
+      return;
+    }
+    
+    toast.success('Pesanan berhasil dikirim! Terima kasih.');
+    clearCart();
+    onClose();
   };
 
   return (
@@ -112,9 +128,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   <span className="text-muted-foreground">Total</span>
                   <span className="text-2xl font-bold text-primary">{formatPrice(totalPrice)}</span>
                 </div>
-                <Button size="lg" className="w-full">
-                  Checkout
-                </Button>
+                
+                {user ? (
+                  <Button size="lg" className="w-full" onClick={handleCheckout}>
+                    Checkout
+                  </Button>
+                ) : (
+                  <Link to="/auth" onClick={onClose}>
+                    <Button size="lg" className="w-full">
+                      Login untuk Checkout
+                    </Button>
+                  </Link>
+                )}
+                
                 <Button variant="ghost" size="sm" onClick={clearCart} className="w-full text-destructive">
                   Kosongkan Keranjang
                 </Button>
