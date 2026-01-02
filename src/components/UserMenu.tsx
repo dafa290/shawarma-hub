@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, ChevronDown, Settings } from 'lucide-react';
+import { User, LogOut, ChevronDown, Settings, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -57,6 +57,14 @@ const UserMenu = () => {
                 >
                   <Settings className="w-4 h-4" />
                   Edit Profil
+                </Link>
+                <Link
+                  to="/orders"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-secondary transition-colors"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Riwayat Pesanan
                 </Link>
                 <button
                   onClick={handleSignOut}

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import heroShawarma from '@/assets/hero-shawarma.jpg';
 
 const HeroSection = () => {
   const { user } = useAuth();
@@ -105,7 +106,7 @@ const HeroSection = () => {
               <motion.img
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                src="https://images.unsplash.com/photo-1604908177522-42938a1c1e16?w=600&h=600&fit=crop"
+                src={heroShawarma}
                 alt="Delicious Shawarma"
                 className="w-full max-w-lg mx-auto rounded-3xl shadow-lg"
               />
