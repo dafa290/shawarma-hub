@@ -1,8 +1,10 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 
@@ -14,6 +16,8 @@ interface CartSidebarProps {
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { cart, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -23,16 +27,54 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }).format(price);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!user) {
       toast.info('Silakan login terlebih dahulu untuk checkout');
       onClose();
       return;
     }
-    
-    toast.success('Pesanan berhasil dikirim! Terima kasih.');
-    clearCart();
-    onClose();
+
+    setIsCheckingOut(true);
+
+    try {
+      // Fetch user profile for delivery address
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('address')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      // Prepare order items
+      const orderItems = cart.map(item => ({
+        id: item.id,
+        title: item.title,
+        quantity: item.qty,
+        price: item.priceNum,
+      }));
+
+      // Create order
+      const { error } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          items: orderItems,
+          total_amount: totalPrice,
+          status: 'pending',
+          delivery_address: profile?.address || null,
+        });
+
+      if (error) throw error;
+
+      toast.success('Pesanan berhasil dibuat! Terima kasih.');
+      clearCart();
+      onClose();
+      navigate('/orders');
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error('Gagal membuat pesanan. Silakan coba lagi.');
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   return (
@@ -130,8 +172,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 </div>
                 
                 {user ? (
-                  <Button size="lg" className="w-full" onClick={handleCheckout}>
-                    Checkout
+                  <Button size="lg" className="w-full" onClick={handleCheckout} disabled={isCheckingOut}>
+                    {isCheckingOut ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      'Checkout'
+                    )}
                   </Button>
                 ) : (
                   <Link to="/auth" onClick={onClose}>
