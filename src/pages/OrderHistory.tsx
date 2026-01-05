@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Loader2, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Loader2, ShoppingBag, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import OrderTimeline from '@/components/OrderTimeline';
 
 interface OrderItem {
   id: string;
@@ -29,22 +30,27 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode; color
   pending: { 
     label: 'Menunggu', 
     icon: <Clock className="w-4 h-4" />, 
-    color: 'text-amber-600 bg-amber-100' 
+    color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400' 
   },
   processing: { 
     label: 'Diproses', 
     icon: <Package className="w-4 h-4" />, 
-    color: 'text-blue-600 bg-blue-100' 
+    color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400' 
+  },
+  on_delivery: { 
+    label: 'Dalam Pengiriman', 
+    icon: <Package className="w-4 h-4" />, 
+    color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400' 
   },
   completed: { 
     label: 'Selesai', 
     icon: <CheckCircle className="w-4 h-4" />, 
-    color: 'text-green-600 bg-green-100' 
+    color: 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400' 
   },
   cancelled: { 
     label: 'Dibatalkan', 
     icon: <XCircle className="w-4 h-4" />, 
-    color: 'text-red-600 bg-red-100' 
+    color: 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400' 
   },
 };
 
@@ -53,6 +59,7 @@ const OrderHistory = () => {
   const { user, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -150,6 +157,7 @@ const OrderHistory = () => {
             <div className="space-y-4">
               {orders.map((order, index) => {
                 const status = statusConfig[order.status] || statusConfig.pending;
+                const isExpanded = expandedOrder === order.id;
                 
                 return (
                   <motion.div
@@ -160,8 +168,11 @@ const OrderHistory = () => {
                     className="bg-card rounded-2xl border border-border overflow-hidden"
                   >
                     {/* Order Header */}
-                    <div className="p-4 border-b border-border flex items-center justify-between">
-                      <div>
+                    <button
+                      onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                      className="w-full p-4 border-b border-border flex items-center justify-between hover:bg-secondary/30 transition-colors"
+                    >
+                      <div className="text-left">
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(order.created_at), 'dd MMMM yyyy, HH:mm', { locale: idLocale })}
                         </p>
@@ -169,11 +180,32 @@ const OrderHistory = () => {
                           #{order.id.slice(0, 8).toUpperCase()}
                         </p>
                       </div>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
-                        {status.icon}
-                        {status.label}
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
+                          {status.icon}
+                          {status.label}
+                        </span>
+                        <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
+
+                    {/* Expandable Timeline Section */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 py-2 bg-secondary/20 border-b border-border">
+                            <p className="text-sm font-medium mb-2">Status Pesanan</p>
+                            <OrderTimeline status={order.status} createdAt={order.created_at} />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Order Items */}
                     <div className="p-4 space-y-3">
