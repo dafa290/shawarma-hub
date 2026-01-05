@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, ChevronDown, Settings, ShoppingBag } from 'lucide-react';
+import { User, LogOut, ChevronDown, Settings, ShoppingBag, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { toast } from 'sonner';
 
 const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdminCheck();
 
   const handleSignOut = async () => {
     await signOut();
@@ -66,6 +68,16 @@ const UserMenu = () => {
                   <ShoppingBag className="w-4 h-4" />
                   Riwayat Pesanan
                 </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Admin Panel
+                  </Link>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"

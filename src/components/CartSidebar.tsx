@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, Loader2, Clock } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
+import { getDeliveryEstimate } from '@/utils/deliveryEstimate';
 
 interface CartSidebarProps {
   open: boolean;
@@ -18,6 +19,29 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [userAddress, setUserAddress] = useState<string | null>(null);
+
+  // Fetch user address for delivery estimate
+  useEffect(() => {
+    const fetchAddress = async () => {
+      if (!user) {
+        setUserAddress(null);
+        return;
+      }
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('address')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      setUserAddress(profile?.address || null);
+    };
+
+    fetchAddress();
+  }, [user]);
+
+  const deliveryEstimate = getDeliveryEstimate(userAddress);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -37,13 +61,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     setIsCheckingOut(true);
 
     try {
-      // Fetch user profile for delivery address
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('address')
-        .eq('id', user.id)
-        .maybeSingle();
-
       // Prepare order items
       const orderItems = cart.map(item => ({
         id: item.id,
@@ -60,7 +77,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           items: orderItems,
           total_amount: totalPrice,
           status: 'pending',
-          delivery_address: profile?.address || null,
+          delivery_address: userAddress,
         });
 
       if (error) throw error;
@@ -166,6 +183,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             {/* Footer */}
             {cart.length > 0 && (
               <div className="p-4 border-t border-border space-y-4">
+                {/* Delivery Estimate */}
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span>Estimasi Pengiriman</span>
+                  </div>
+                  <span className="font-medium text-foreground">{deliveryEstimate.label}</span>
+                </div>
+
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Total</span>
                   <span className="text-2xl font-bold text-primary">{formatPrice(totalPrice)}</span>
